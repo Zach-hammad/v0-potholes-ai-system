@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Incident: {{ incident.location }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Edit Incident</h1>
+                    <p class="text-muted mb-0">{{ incident.location }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('incidents.view', incident_id=incident.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-eye me-1"></i>View
+                    </a>
+                    <a href="{{ url_for('dashboard.incidents_list') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to List
+                    </a>
+                </div>
+            </div>
+
+            <!-- Edit Form -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>Update Incident Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" data-validate>
+                        <div class="row g-3">
+                            <!-- Location -->
+                            <div class="col-12">
+                                <label for="location" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>Location *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="location" 
+                                       name="location" 
+                                       value="{{ incident.location }}"
+                                       data-location
+                                       required>
+                            </div>
+                            
+                            <!-- Coordinates -->
+                            <input type="hidden" id="latitude" name="latitude" value="{{ incident.latitude or '' }}">
+                            <input type="hidden" id="longitude" name="longitude" value="{{ incident.longitude or '' }}">
+                            
+                            <!-- Severity, Priority, Status -->
+                            <div class="col-md-4">
+                                <label for="severity" class="form-label">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Severity *
+                                </label>
+                                <select class="form-select" id="severity" name="severity" required>
+                                    <option value="minor" {% if incident.severity == 'minor' %}selected{% endif %}>Minor</option>
+                                    <option value="moderate" {% if incident.severity == 'moderate' %}selected{% endif %}>Moderate</option>
+                                    <option value="major" {% if incident.severity == 'major' %}selected{% endif %}>Major</option>
+                                    <option value="critical" {% if incident.severity == 'critical' %}selected{% endif %}>Critical</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="priority" class="form-label">
+                                    <i class="fas fa-flag me-1"></i>Priority
+                                </label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="low" {% if incident.priority == 'low' %}selected{% endif %}>Low</option>
+                                    <option value="medium" {% if incident.priority == 'medium' %}selected{% endif %}>Medium</option>
+                                    <option value="high" {% if incident.priority == 'high' %}selected{% endif %}>High</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="status" class="form-label">
+                                    <i class="fas fa-tasks me-1"></i>Status
+                                </label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="reported" {% if incident.status == 'reported' %}selected{% endif %}>Reported</option>
+                                    <option value="in-progress" {% if incident.status == 'in-progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="resolved" {% if incident.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Assignment -->
+                            <div class="col-md-6">
+                                <label for="assigned_to" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Assigned To
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="assigned_to" 
+                                       name="assigned_to" 
+                                       value="{{ incident.assigned_to or '' }}"
+                                       placeholder="Username or leave empty">
+                            </div>
+                            
+                            <!-- Description -->
+                            <div class="col-12">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-comment me-1"></i>Description
+                                </label>
+                                <textarea class="form-control" 
+                                          id="description" 
+                                          name="description" 
+                                          rows="4"
+                                          placeholder="Describe the pothole and any additional details...">{{ incident.description or '' }}</textarea>
+                            </div>
+                            
+                            <!-- Location Map -->
+                            <div class="col-12">
+                                <label class="form-label">
+                                    <i class="fas fa-map me-1"></i>Update Location
+                                </label>
+                                <div id="editMap" style="height: 350px;" class="border rounded"></div>
+                                <div class="form-text">
+                                    Click on the map to update the incident location
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('incidents.view', incident_id=incident.id) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" data-original-text="Update Incident">
+                                <i class="fas fa-save me-1"></i>Update Incident
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map
+    const lat = {{ incident.latitude or 40.7128 }};
+    const lng = {{ incident.longitude or -74.0060 }};
+    
+    const editMap = L.map('editMap').setView([lat, lng], 15);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(editMap);
+    
+    // Add existing marker if coordinates exist
+    let marker = null;
+    {% if incident.latitude and incident.longitude %}
+    marker = L.marker([lat, lng]).addTo(editMap);
+    {% endif %}
+    
+    // Handle map clicks
+    editMap.on('click', function(e) {
+        const newLat = e.latlng.lat;
+        const newLng = e.latlng.lng;
+        
+        // Remove existing marker
+        if (marker) {
+            editMap.removeLayer(marker);
+        }
+        
+        // Add new marker
+        marker = L.marker([newLat, newLng]).addTo(editMap);
+        
+        // Update hidden form fields
+        document.getElementById('latitude').value = newLat;
+        document.getElementById('longitude').value = newLng;
+    });
+    
+    // Auto-update priority based on severity
+    document.getElementById('severity').addEventListener('change', function() {
+        const priority = document.getElementById('priority');
+        switch(this.value) {
+            case 'critical':
+                priority.value = 'high';
+                break;
+            case 'major':
+                priority.value = 'high';
+                break;
+            case 'moderate':
+                priority.value = 'medium';
+                break;
+            case 'minor':
+                priority.value = 'low';
+                break;
+        }
+    });
+});
+</script>
+{% endblock %}

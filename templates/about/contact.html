@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - POTHOLES{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-5 fw-bold text-primary mb-4">Contact Us</h1>
+            <p class="lead text-muted">
+                Have questions about POTHOLES? Need technical support? Want to learn more about our AI-powered road maintenance solutions? We're here to help!
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contact Form -->
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-envelope me-2"></i>Send us a Message
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject *</label>
+                            <select class="form-select" id="subject" name="subject" required>
+                                <option value="">Select a subject...</option>
+                                <option value="General Inquiry">General Inquiry</option>
+                                <option value="Technical Support">Technical Support</option>
+                                <option value="Feature Request">Feature Request</option>
+                                <option value="Bug Report">Bug Report</option>
+                                <option value="Partnership">Partnership Opportunity</option>
+                                <option value="Media Inquiry">Media Inquiry</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="message" class="form-label">Message *</label>
+                            <textarea class="form-control" id="message" name="message" rows="6" 
+                                      placeholder="Please provide details about your inquiry..." required></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="col-lg-4">
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Contact Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold">
+                            <i class="fas fa-envelope text-primary me-2"></i>Email Support
+                        </h6>
+                        <p class="text-muted mb-0">support@potholes.local</p>
+                        <small class="text-muted">We typically respond within 24 hours</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold">
+                            <i class="fas fa-clock text-primary me-2"></i>Support Hours
+                        </h6>
+                        <p class="text-muted mb-0">Monday - Friday: 9:00 AM - 6:00 PM</p>
+                        <small class="text-muted">Emergency issues: 24/7 response</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold">
+                            <i class="fas fa-map-marker-alt text-primary me-2"></i>Location
+                        </h6>
+                        <p class="text-muted mb-0">Serving communities worldwide</p>
+                        <small class="text-muted">Cloud-based infrastructure</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow border-0 mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>Quick Help
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('chat.index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-robot me-2"></i>AI Assistant
+                        </a>
+                        <a href="{{ url_for('discovery.report') }}" class="btn btn-outline-success">
+                            <i class="fas fa-plus me-2"></i>Report Pothole
+                        </a>
+                        <a href="{{ url_for('discovery.map') }}" class="btn btn-outline-info">
+                            <i class="fas fa-map me-2"></i>View Map
+                        </a>
+                        <a href="{{ url_for('about.about') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-info me-2"></i>Learn More
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-light border-0">
+                <div class="card-body text-center">
+                    <h6 class="fw-bold mb-3">Follow Our Progress</h6>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="#" class="text-primary" title="GitHub">
+                            <i class="fab fa-github fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-primary" title="Twitter">
+                            <i class="fab fa-twitter fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-primary" title="LinkedIn">
+                            <i class="fab fa-linkedin fa-2x"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

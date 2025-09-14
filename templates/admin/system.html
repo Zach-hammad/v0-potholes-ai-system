@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - Admin Console{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Admin Console</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.index') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.users') }}">
+                            <i class="fas fa-users"></i> User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin.system') }}">
+                            <i class="fas fa-cog"></i> System Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.logs') }}">
+                            <i class="fas fa-file-alt"></i> Audit Logs
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">System Settings</h1>
+            </div>
+
+            <!-- Configuration Status -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Integration Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-database fa-2x {{ 'text-success' if config.tigris_configured else 'text-danger' }} me-3"></i>
+                                        <div>
+                                            <h6 class="mb-0">Tigris Storage</h6>
+                                            <small class="text-muted">{{ 'Configured' if config.tigris_configured else 'Not Configured' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-robot fa-2x {{ 'text-success' if config.ai_configured else 'text-danger' }} me-3"></i>
+                                        <div>
+                                            <h6 class="mb-0">AI Integration</h6>
+                                            <small class="text-muted">{{ 'Configured' if config.ai_configured else 'Not Configured' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-map fa-2x {{ 'text-success' if config.maps_configured else 'text-danger' }} me-3"></i>
+                                        <div>
+                                            <h6 class="mb-0">Maps Integration</h6>
+                                            <small class="text-muted">{{ 'Configured' if config.maps_configured else 'Not Configured' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-envelope fa-2x {{ 'text-success' if config.email_configured else 'text-danger' }} me-3"></i>
+                                        <div>
+                                            <h6 class="mb-0">Email Service</h6>
+                                            <small class="text-muted">{{ 'Configured' if config.email_configured else 'Not Configured' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">System Info</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Debug Mode:</strong>
+                                <span class="badge bg-{{ 'warning' if config.debug_mode else 'success' }}">
+                                    {{ 'Enabled' if config.debug_mode else 'Disabled' }}
+                                </span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Version:</strong> 1.0.0
+                            </div>
+                            <div class="mb-3">
+                                <strong>Environment:</strong> {{ 'Development' if config.debug_mode else 'Production' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Environment Variables Guide -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Environment Variables Guide</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Configuration Help:</strong> Set these environment variables to enable full functionality.
+                    </div>
+                    
+                    <div class="accordion" id="envAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="tigrisHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#tigrisCollapse">
+                                    Tigris Storage Configuration
+                                </button>
+                            </h2>
+                            <div id="tigrisCollapse" class="accordion-collapse collapse" data-bs-parent="#envAccordion">
+                                <div class="accordion-body">
+                                    <code>TIGRIS_ENDPOINT</code> - Your Tigris endpoint URL<br>
+                                    <code>TIGRIS_ACCESS_KEY</code> - Access key for Tigris<br>
+                                    <code>TIGRIS_SECRET_KEY</code> - Secret key for Tigris<br>
+                                    <code>TIGRIS_BUCKET</code> - Bucket name for file storage
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="aiHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aiCollapse">
+                                    AI Integration Configuration
+                                </button>
+                            </h2>
+                            <div id="aiCollapse" class="accordion-collapse collapse" data-bs-parent="#envAccordion">
+                                <div class="accordion-body">
+                                    <code>OPENAI_API_KEY</code> - OpenAI API key for AI features<br>
+                                    <code>AI_MODEL</code> - AI model to use (optional, defaults to gpt-3.5-turbo)
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="mapsHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mapsCollapse">
+                                    Maps Integration Configuration
+                                </button>
+                            </h2>
+                            <div id="mapsCollapse" class="accordion-collapse collapse" data-bs-parent="#envAccordion">
+                                <div class="accordion-body">
+                                    <code>MAPBOX_ACCESS_TOKEN</code> - Mapbox access token for enhanced maps<br>
+                                    <small class="text-muted">Note: System will fall back to OpenStreetMap if not configured</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

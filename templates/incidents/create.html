@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Create Incident - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Create New Incident</h1>
+                    <p class="text-muted mb-0">Report a new pothole or road issue</p>
+                </div>
+                <a href="{{ url_for('dashboard.incidents_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Incidents
+                </a>
+            </div>
+
+            <!-- Create Form -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus me-2"></i>Incident Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" data-validate>
+                        <div class="row g-3">
+                            <!-- Location -->
+                            <div class="col-12">
+                                <label for="location" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>Location *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="location" 
+                                       name="location" 
+                                       data-location
+                                       placeholder="e.g., Main Street near Oak Avenue"
+                                       required>
+                                <div class="form-text">
+                                    Provide the street name, intersection, or landmark
+                                </div>
+                            </div>
+                            
+                            <!-- Coordinates (hidden, filled by map click) -->
+                            <input type="hidden" id="latitude" name="latitude">
+                            <input type="hidden" id="longitude" name="longitude">
+                            
+                            <!-- Severity and Priority -->
+                            <div class="col-md-6">
+                                <label for="severity" class="form-label">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Severity *
+                                </label>
+                                <select class="form-select" id="severity" name="severity" required>
+                                    <option value="minor">Minor - Small surface issue</option>
+                                    <option value="moderate" selected>Moderate - Noticeable damage</option>
+                                    <option value="major">Major - Significant damage</option>
+                                    <option value="critical">Critical - Immediate danger</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="priority" class="form-label">
+                                    <i class="fas fa-flag me-1"></i>Priority
+                                </label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Description -->
+                            <div class="col-12">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-comment me-1"></i>Description
+                                </label>
+                                <textarea class="form-control" 
+                                          id="description" 
+                                          name="description" 
+                                          rows="4"
+                                          placeholder="Describe the pothole size, depth, traffic impact, and any additional details..."></textarea>
+                                <div class="form-text">
+                                    Provide detailed information about the issue
+                                </div>
+                            </div>
+                            
+                            <!-- Location Map -->
+                            <div class="col-12">
+                                <label class="form-label">
+                                    <i class="fas fa-map me-1"></i>Set Precise Location
+                                </label>
+                                <div id="incidentMap" style="height: 350px;" class="border rounded"></div>
+                                <div class="form-text">
+                                    Click on the map to set the exact location of the incident
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('dashboard.incidents_list') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" data-original-text="Create Incident">
+                                <i class="fas fa-plus me-1"></i>Create Incident
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map for location selection
+    const incidentMap = L.map('incidentMap').setView([40.7128, -74.0060], 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(incidentMap);
+    
+    let marker = null;
+    
+    // Handle map clicks
+    incidentMap.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        // Remove existing marker
+        if (marker) {
+            incidentMap.removeLayer(marker);
+        }
+        
+        // Add new marker
+        marker = L.marker([lat, lng]).addTo(incidentMap);
+        
+        // Update hidden form fields
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lng;
+        
+        // Reverse geocode to get address (simplified)
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.display_name) {
+                    const locationInput = document.getElementById('location');
+                    if (!locationInput.value.trim()) {
+                        locationInput.value = data.display_name;
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('Geocoding not available:', error);
+            });
+    });
+    
+    // Try to get user's location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            incidentMap.setView([lat, lng], 15);
+        }, function(error) {
+            console.log('Geolocation not available:', error);
+        });
+    }
+    
+    // Auto-update priority based on severity
+    document.getElementById('severity').addEventListener('change', function() {
+        const priority = document.getElementById('priority');
+        switch(this.value) {
+            case 'critical':
+                priority.value = 'high';
+                break;
+            case 'major':
+                priority.value = 'high';
+                break;
+            case 'moderate':
+                priority.value = 'medium';
+                break;
+            case 'minor':
+                priority.value = 'low';
+                break;
+        }
+    });
+});
+</script>
+{% endblock %}

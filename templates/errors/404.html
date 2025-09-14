@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="mb-4">
+                <i class="fas fa-road fa-4x text-muted"></i>
+            </div>
+            <h1 class="display-4 mb-3">404</h1>
+            <h2 class="mb-3">Page Not Found</h2>
+            <p class="lead text-muted mb-4">
+                The page you're looking for seems to have taken a detour. 
+                Let's get you back on the right road.
+            </p>
+            <div class="d-flex gap-3 justify-content-center">
+                <a href="{{ url_for('discovery.index') }}" class="btn btn-primary">
+                    <i class="fas fa-home me-1"></i>Go Home
+                </a>
+                <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

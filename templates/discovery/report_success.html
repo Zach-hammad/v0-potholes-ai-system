@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Report Submitted - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow text-center">
+                <div class="card-body py-5">
+                    <div class="text-success mb-4">
+                        <i class="fas fa-check-circle fa-4x"></i>
+                    </div>
+                    <h2 class="text-success mb-3">Report Submitted Successfully!</h2>
+                    <p class="lead mb-4">
+                        Thank you for helping improve our roads. Your report has been received and will be reviewed by our team.
+                    </p>
+                    
+                    {% if incident %}
+                    <div class="bg-light rounded p-3 mb-4">
+                        <h6 class="mb-2">Report Details:</h6>
+                        <p class="mb-1"><strong>Location:</strong> {{ incident.location }}</p>
+                        <p class="mb-1"><strong>Severity:</strong> 
+                            <span class="severity-{{ incident.severity }}">{{ incident.severity.title() }}</span>
+                        </p>
+                        <p class="mb-0"><strong>Report ID:</strong> {{ incident.id }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex gap-3 justify-content-center flex-wrap">
+                        <a href="{{ url_for('discovery.index') }}" class="btn btn-primary">
+                            <i class="fas fa-home me-1"></i>Back to Home
+                        </a>
+                        <a href="{{ url_for('discovery.report_incident') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-1"></i>Report Another
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

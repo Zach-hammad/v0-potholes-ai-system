@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}{{ app_name }} - AI-Powered Pothole Detection{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Smart Pothole Detection & Management</h1>
+                <p class="lead mb-4">
+                    Our AI-powered system helps communities identify, track, and resolve road infrastructure issues efficiently.
+                </p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{{ url_for('discovery.report_incident') }}" class="btn btn-light btn-lg">
+                        <i class="fas fa-plus me-2"></i>Report Pothole
+                    </a>
+                    <a href="{{ url_for('discovery.map_view') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-map me-2"></i>View Map
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <i class="fas fa-road display-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card stats-card text-center p-4">
+                    <div class="card-body">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                        <h3 class="fw-bold">{{ stats.total_incidents }}</h3>
+                        <p class="mb-0">Total Reports</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white text-center p-4">
+                    <div class="card-body">
+                        <i class="fas fa-check-circle fa-2x mb-3"></i>
+                        <h3 class="fw-bold">{{ stats.resolved_incidents }}</h3>
+                        <p class="mb-0">Resolved</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white text-center p-4">
+                    <div class="card-body">
+                        <i class="fas fa-exclamation fa-2x mb-3"></i>
+                        <h3 class="fw-bold">{{ stats.critical_incidents }}</h3>
+                        <p class="mb-0">Critical</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white text-center p-4">
+                    <div class="card-body">
+                        <i class="fas fa-tools fa-2x mb-3"></i>
+                        <h3 class="fw-bold">{{ stats.in_progress }}</h3>
+                        <p class="mb-0">In Progress</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Map Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-5">Recent Incidents Map</h2>
+                <div class="map-container" id="map"></div>
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('discovery.map_view') }}" class="btn btn-primary">
+                        <i class="fas fa-expand me-2"></i>View Full Map
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2>How It Works</h2>
+                <p class="lead text-muted">Simple, efficient, and community-driven</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-camera fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Report Issues</h5>
+                        <p class="card-text">
+                            Citizens can easily report potholes and road issues through our simple form or mobile app.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">AI Analysis</h5>
+                        <p class="card-text">
+                            Our AI system analyzes reports, determines severity, and prioritizes repairs automatically.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-wrench fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Quick Resolution</h5>
+                        <p class="card-text">
+                            Maintenance teams receive prioritized work orders and can update status in real-time.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Incidents -->
+{% if incidents %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-5">Recent Reports</h2>
+                <div class="row g-3">
+                    {% for incident in incidents[:6] %}
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">{{ incident.location }}</h6>
+                                    <span class="badge severity-{{ incident.severity }}">
+                                        {{ incident.severity.title() }}
+                                    </span>
+                                </div>
+                                <p class="text-muted small mb-2">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ moment(incident.created_at).fromNow() if incident.created_at else 'Recently' }}
+                                </p>
+                                <span class="badge status-{{ incident.status }}">
+                                    {{ incident.status.replace('-', ' ').title() }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Call to Action -->
+<section class="py-5 bg-primary text-white">
+    <div class="container text-center">
+        <h2 class="mb-4">Help Improve Our Roads</h2>
+        <p class="lead mb-4">
+            Your reports help us maintain safer, better roads for everyone in our community.
+        </p>
+        <a href="{{ url_for('discovery.report_incident') }}" class="btn btn-light btn-lg">
+            <i class="fas fa-plus me-2"></i>Report a Pothole Now
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map with incidents data
+    const incidents = {{ incidents | tojson }};
+    
+    if (window.potholesApp && window.potholesApp.map) {
+        // Map is already initialized by main.js
+        console.log('Map loaded with', incidents.length, 'incidents');
+    }
+});
+</script>
+{% endblock %}

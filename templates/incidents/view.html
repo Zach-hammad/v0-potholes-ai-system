@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Incident: {{ incident.location }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">{{ incident.location }}</h1>
+            <p class="text-muted mb-0">Incident ID: {{ incident.id }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('incidents.edit', incident_id=incident.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-1"></i>Edit
+            </a>
+            <a href="{{ url_for('dashboard.incidents_list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Incident Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Incident Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <strong>Location:</strong><br>
+                            <span class="text-muted">{{ incident.location }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Status:</strong><br>
+                            <span class="badge status-{{ incident.status }} fs-6">
+                                {{ incident.status.replace('-', ' ').title() }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Severity:</strong><br>
+                            <span class="badge severity-{{ incident.severity }} fs-6">
+                                {{ incident.severity.title() }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Priority:</strong><br>
+                            <span class="badge bg-{{ 'danger' if incident.priority == 'high' else 'warning' if incident.priority == 'medium' else 'secondary' }} fs-6">
+                                {{ incident.priority.title() }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Reported:</strong><br>
+                            <span class="text-muted">
+                                {{ moment(incident.created_at).format('MMMM Do, YYYY [at] h:mm A') if incident.created_at else 'Recently' }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Assigned To:</strong><br>
+                            {% if incident.assigned_to %}
+                                <span class="text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ incident.assigned_to }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">
+                                    <i class="fas fa-user-slash me-1"></i>Unassigned
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% if incident.description %}
+                        <div class="col-12">
+                            <strong>Description:</strong><br>
+                            <p class="text-muted mb-0">{{ incident.description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map -->
+            {% if incident.latitude and incident.longitude %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-map me-2"></i>Location Map
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="incidentMap" style="height: 300px;"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Comments Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-comments me-2"></i>Comments
+                        {% if incident.comments %}
+                        <span class="badge bg-secondary">{{ incident.comments|length }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Existing Comments -->
+                    {% if incident.comments %}
+                    <div class="mb-4">
+                        {% for comment in incident.comments %}
+                        <div class="border-start border-primary border-3 ps-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <strong>{{ comment.author }}</strong>
+                                <small class="text-muted">
+                                    {{ moment(comment.created_at).fromNow() if comment.created_at else 'Recently' }}
+                                </small>
+                            </div>
+                            <p class="mb-0">{{ comment.text }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Add Comment Form -->
+                    <form method="POST" action="{{ url_for('incidents.add_comment', incident_id=incident.id) }}">
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Add Comment</label>
+                            <textarea class="form-control" 
+                                      id="comment" 
+                                      name="comment" 
+                                      rows="3"
+                                      placeholder="Add your comment or update about this incident..."
+                                      required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-comment me-1"></i>Add Comment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Assignment -->
+                    {% if not incident.assigned_to %}
+                    <form method="POST" action="{{ url_for('incidents.assign', incident_id=incident.id) }}" class="mb-3">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-user-plus me-1"></i>Assign to Me
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <!-- Status Updates -->
+                    {% if incident.status != 'resolved' %}
+                    <div class="mb-3">
+                        <label class="form-label">Update Status:</label>
+                        <div class="d-grid gap-2">
+                            {% if incident.status != 'in-progress' %}
+                            <form method="POST" action="{{ url_for('incidents.update_status', incident_id=incident.id) }}" class="d-inline">
+                                <input type="hidden" name="status" value="in-progress">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="fas fa-play me-1"></i>Mark In Progress
+                                </button>
+                            </form>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('incidents.update_status', incident_id=incident.id) }}" class="d-inline">
+                                <input type="hidden" name="status" value="resolved">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-check me-1"></i>Mark Resolved
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Edit and Delete -->
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('incidents.edit', incident_id=incident.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-1"></i>Edit Details
+                        </a>
+                        {% if current_user.role == 'admin' %}
+                        <form method="POST" action="{{ url_for('incidents.delete', incident_id=incident.id) }}" 
+                              onsubmit="return confirm('Are you sure you want to delete this incident? This action cannot be undone.')">
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-trash me-1"></i>Delete Incident
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incident Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Timeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Incident Reported</h6>
+                                <small class="text-muted">
+                                    {{ moment(incident.created_at).format('MMM Do, YYYY [at] h:mm A') if incident.created_at else 'Recently' }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        {% if incident.assigned_to %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Assigned to {{ incident.assigned_to }}</h6>
+                                <small class="text-muted">
+                                    {{ moment(incident.updated_at).format('MMM Do, YYYY [at] h:mm A') if incident.updated_at else 'Recently' }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if incident.status == 'resolved' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Incident Resolved</h6>
+                                <small class="text-muted">
+                                    {{ moment(incident.updated_at).format('MMM Do, YYYY [at] h:mm A') if incident.updated_at else 'Recently' }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0.25rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content {
+    padding-left: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if incident.latitude and incident.longitude %}
+    // Initialize map
+    const map = L.map('incidentMap').setView([{{ incident.latitude }}, {{ incident.longitude }}], 16);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Add marker for incident location
+    const marker = L.marker([{{ incident.latitude }}, {{ incident.longitude }}]).addTo(map);
+    
+    const popupContent = `
+        <div class="p-2">
+            <h6 class="mb-2">{{ incident.location }}</h6>
+            <p class="mb-1">
+                <strong>Severity:</strong> 
+                <span class="severity-{{ incident.severity }}">{{ incident.severity }}</span>
+            </p>
+            <p class="mb-0">
+                <strong>Status:</strong> 
+                <span class="badge status-{{ incident.status }}">{{ incident.status }}</span>
+            </p>
+        </div>
+    `;
+    
+    marker.bindPopup(popupContent).openPopup();
+    {% endif %}
+});
+</script>
+{% endblock %}

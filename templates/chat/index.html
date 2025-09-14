@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}AI Assistant - POTHOLES{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-container {
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.message {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.message.assistant {
+    justify-content: flex-start;
+}
+
+.message-content {
+    max-width: 70%;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    word-wrap: break-word;
+}
+
+.message.user .message-content {
+    background-color: #007bff;
+    color: white;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.message.assistant .message-content {
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    margin: 0 0.5rem;
+}
+
+.message.user .message-avatar {
+    background-color: #007bff;
+    color: white;
+    order: 2;
+}
+
+.message.assistant .message-avatar {
+    background-color: #28a745;
+    color: white;
+    order: 1;
+}
+
+.chat-input-container {
+    padding: 1rem;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 0.375rem 0.375rem;
+}
+
+.suggestions-container {
+    margin-bottom: 1rem;
+}
+
+.suggestion-chip {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    margin: 0.25rem;
+    background-color: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suggestion-chip:hover {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.typing-indicator {
+    display: none;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.typing-dots {
+    display: inline-block;
+    margin-left: 0.5rem;
+}
+
+.typing-dots span {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    margin: 0 1px;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-robot me-2"></i>POTHOLES AI Assistant
+                        </h5>
+                        <button class="btn btn-outline-light btn-sm" onclick="clearChat()">
+                            <i class="fas fa-trash"></i> Clear Chat
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message assistant">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                Hello! I'm your POTHOLES AI Assistant. I can help you with reporting potholes, checking incident status, understanding our detection system, and navigating the platform. How can I assist you today?
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="typing-indicator" id="typingIndicator">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <span>AI is typing</span>
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <div class="suggestions-container" id="suggestionsContainer">
+                            <!-- Suggestions will be loaded here -->
+                        </div>
+                        
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="messageInput" 
+                                   placeholder="Ask me anything about potholes..." 
+                                   onkeypress="handleKeyPress(event)">
+                            <button class="btn btn-primary" onclick="sendMessage()">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3 text-center text-muted">
+                <small>
+                    <i class="fas fa-info-circle"></i>
+                    This AI assistant can help with pothole-related questions and system navigation.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let chatHistory = [];
+
+// Load suggestions on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadSuggestions();
+});
+
+function loadSuggestions() {
+    fetch('/chat/api/suggestions')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('suggestionsContainer');
+            container.innerHTML = '';
+            
+            data.suggestions.forEach(suggestion => {
+                const chip = document.createElement('span');
+                chip.className = 'suggestion-chip';
+                chip.textContent = suggestion;
+                chip.onclick = () => {
+                    document.getElementById('messageInput').value = suggestion;
+                    sendMessage();
+                };
+                container.appendChild(chip);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading suggestions:', error);
+        });
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to chat
+    addMessage('user', message);
+    input.value = '';
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Send to API
+    fetch('/chat/api/message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideTypingIndicator();
+        
+        if (data.error) {
+            if (data.fallback) {
+                // Show fallback message
+                addMessage('assistant', data.error);
+            } else {
+                showError(data.error);
+            }
+        } else {
+            addMessage('assistant', data.message);
+        }
+    })
+    .catch(error => {
+        hideTypingIndicator();
+        showError('Connection error. Please try again.');
+        console.error('Error:', error);
+    });
+}
+
+function addMessage(role, content) {
+    const messagesContainer = document.getElementById('chatMessages');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}`;
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    avatar.innerHTML = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+    
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    messageContent.textContent = content;
+    
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(messageContent);
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Hide suggestions after first message
+    if (chatHistory.length === 0) {
+        document.getElementById('suggestionsContainer').style.display = 'none';
+    }
+    
+    chatHistory.push({ role, content });
+}
+
+function showTypingIndicator() {
+    document.getElementById('typingIndicator').style.display = 'flex';
+    const messagesContainer = document.getElementById('chatMessages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function hideTypingIndicator() {
+    document.getElementById('typingIndicator').style.display = 'none';
+}
+
+function showError(message) {
+    const messagesContainer = document.getElementById('chatMessages');
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+    
+    messagesContainer.appendChild(errorDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function clearChat() {
+    if (confirm('Are you sure you want to clear the chat history?')) {
+        fetch('/chat/api/clear', { method: 'POST' })
+            .then(() => {
+                document.getElementById('chatMessages').innerHTML = `
+                    <div class="message assistant">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            Hello! I'm your POTHOLES AI Assistant. I can help you with reporting potholes, checking incident status, understanding our detection system, and navigating the platform. How can I assist you today?
+                        </div>
+                    </div>
+                `;
+                document.getElementById('suggestionsContainer').style.display = 'block';
+                chatHistory = [];
+            })
+            .catch(error => {
+                console.error('Error clearing chat:', error);
+            });
+    }
+}
+</script>
+{% endblock %}

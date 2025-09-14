@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">Dashboard</h1>
+                    <p class="text-muted mb-0">Welcome back, {{ user.username }}!</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('incidents.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>New Incident
+                    </a>
+                    <a href="{{ url_for('dashboard.analytics') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-chart-bar me-1"></i>Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase opacity-75">Total Incidents</h6>
+                            <h2 class="mb-0">{{ stats.total }}</h2>
+                        </div>
+                        <div class="opacity-75">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="opacity-75">
+                            <i class="fas fa-plus me-1"></i>{{ stats.recent_count }} this week
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase opacity-75">Resolved</h6>
+                            <h2 class="mb-0">{{ stats.status.resolved }}</h2>
+                        </div>
+                        <div class="opacity-75">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="opacity-75">
+                            {{ stats.resolution_rate }}% resolution rate
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase opacity-75">In Progress</h6>
+                            <h2 class="mb-0">{{ stats.status['in-progress'] }}</h2>
+                        </div>
+                        <div class="opacity-75">
+                            <i class="fas fa-tools fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="opacity-75">
+                            {{ stats.unassigned }} unassigned
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase opacity-75">Critical</h6>
+                            <h2 class="mb-0">{{ stats.severity.critical }}</h2>
+                        </div>
+                        <div class="opacity-75">
+                            <i class="fas fa-exclamation fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="opacity-75">
+                            Immediate attention needed
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Incident Timeline (Last 30 Days)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="timelineChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Severity Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="severityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row g-4">
+        <!-- Recent Incidents -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Recent Incidents
+                    </h5>
+                    <a href="{{ url_for('dashboard.incidents_list') }}" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_incidents %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Reported</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for incident in recent_incidents %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ incident.location }}</strong>
+                                        {% if incident.description %}
+                                        <br><small class="text-muted">{{ incident.description[:50] }}...</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge severity-{{ incident.severity }}">
+                                            {{ incident.severity.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge status-{{ incident.status }}">
+                                            {{ incident.status.replace('-', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ moment(incident.created_at).fromNow() if incident.created_at else 'Recently' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('incidents.view', incident_id=incident.id) }}" 
+                                               class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if incident.status != 'resolved' and not incident.assigned_to %}
+                                            <button class="btn btn-outline-success btn-sm" 
+                                                    onclick="assignToMe('{{ incident.id }}')">
+                                                <i class="fas fa-user-plus"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No recent incidents</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- My Assignments -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-check me-2"></i>My Assignments
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if assigned_incidents %}
+                    <div class="list-group list-group-flush">
+                        {% for incident in assigned_incidents[:5] %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ incident.location }}</h6>
+                                    <p class="mb-1 text-muted small">{{ incident.description[:40] }}...</p>
+                                    <small class="text-muted">
+                                        <span class="badge severity-{{ incident.severity }} me-1">
+                                            {{ incident.severity }}
+                                        </span>
+                                        {{ moment(incident.created_at).fromNow() if incident.created_at else 'Recently' }}
+                                    </small>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                            data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" 
+                                               href="{{ url_for('incidents.view', incident_id=incident.id) }}">
+                                                <i class="fas fa-eye me-2"></i>View Details
+                                            </a>
+                                        </li>
+                                        {% if incident.status != 'resolved' %}
+                                        <li>
+                                            <button class="dropdown-item" 
+                                                    onclick="updateStatus('{{ incident.id }}', 'resolved')">
+                                                <i class="fas fa-check me-2"></i>Mark Resolved
+                                            </button>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if assigned_incidents|length > 5 %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('dashboard.incidents_list', assigned='me') }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            View All ({{ assigned_incidents|length }})
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-tasks fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No assignments yet</p>
+                        <a href="{{ url_for('dashboard.incidents_list', assigned='unassigned') }}" 
+                           class="btn btn-sm btn-primary mt-2">
+                            Find Work
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dashboard JavaScript functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts
+    initializeCharts();
+    
+    // Auto-refresh data every 5 minutes
+    setInterval(refreshDashboard, 300000);
+});
+
+function initializeCharts() {
+    // Timeline chart is initialized by main.js
+    // Severity chart is initialized by main.js
+}
+
+function assignToMe(incidentId) {
+    if (!confirm('Assign this incident to yourself?')) return;
+    
+    fetch('/dashboard/api/assign', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            incident_id: incidentId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+
+function updateStatus(incidentId, status) {
+    const statusText = status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    if (!confirm(`Mark incident as ${statusText}?`)) return;
+    
+    fetch('/dashboard/api/update-status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            incident_id: incidentId,
+            status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+    });
+}
+
+function refreshDashboard() {
+    // Refresh statistics
+    fetch('/dashboard/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            // Update stat cards (simplified)
+            console.log('Dashboard stats refreshed');
+        })
+        .catch(error => {
+            console.error('Error refreshing dashboard:', error);
+        });
+}
+</script>
+{% endblock %}

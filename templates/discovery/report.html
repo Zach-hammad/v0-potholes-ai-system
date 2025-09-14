@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Report Pothole - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-plus me-2"></i>Report a Pothole
+                    </h3>
+                    <p class="mb-0 opacity-75">Help us improve road safety in your community</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST" data-validate>
+                        <div class="row g-3">
+                            <!-- Location -->
+                            <div class="col-12">
+                                <label for="location" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>Location *
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="location" 
+                                       name="location" 
+                                       data-location
+                                       placeholder="e.g., Main Street near Oak Avenue"
+                                       required>
+                                <div class="form-text">
+                                    Provide the street name, intersection, or landmark
+                                </div>
+                            </div>
+                            
+                            <!-- Coordinates (hidden, filled by map click) -->
+                            <input type="hidden" id="latitude" name="latitude">
+                            <input type="hidden" id="longitude" name="longitude">
+                            
+                            <!-- Severity -->
+                            <div class="col-md-6">
+                                <label for="severity" class="form-label">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Severity
+                                </label>
+                                <select class="form-select" id="severity" name="severity" required>
+                                    <option value="minor">Minor - Small surface issue</option>
+                                    <option value="moderate" selected>Moderate - Noticeable damage</option>
+                                    <option value="major">Major - Significant damage</option>
+                                    <option value="critical">Critical - Immediate danger</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Description -->
+                            <div class="col-12">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-comment me-1"></i>Description
+                                </label>
+                                <textarea class="form-control" 
+                                          id="description" 
+                                          name="description" 
+                                          rows="4"
+                                          placeholder="Describe the pothole size, depth, and any additional details..."></textarea>
+                                <div class="form-text">
+                                    Optional: Provide additional details about the issue
+                                </div>
+                            </div>
+                            
+                            <!-- Location Map -->
+                            <div class="col-12">
+                                <label class="form-label">
+                                    <i class="fas fa-map me-1"></i>Click on map to set precise location (optional)
+                                </label>
+                                <div id="reportMap" style="height: 300px;" class="border rounded"></div>
+                                <div class="form-text">
+                                    Click on the map to set the exact location of the pothole
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('discovery.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary" data-original-text="Submit Report">
+                                <i class="fas fa-paper-plane me-1"></i>Submit Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map for location selection
+    const reportMap = L.map('reportMap').setView([40.7128, -74.0060], 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(reportMap);
+    
+    let marker = null;
+    
+    // Handle map clicks
+    reportMap.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        // Remove existing marker
+        if (marker) {
+            reportMap.removeLayer(marker);
+        }
+        
+        // Add new marker
+        marker = L.marker([lat, lng]).addTo(reportMap);
+        
+        // Update hidden form fields
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lng;
+        
+        // Reverse geocode to get address (simplified)
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.display_name) {
+                    const locationInput = document.getElementById('location');
+                    if (!locationInput.value.trim()) {
+                        locationInput.value = data.display_name;
+                    }
+                }
+            })
+            .catch(error => {
+                console.log('Geocoding not available:', error);
+            });
+    });
+    
+    // Try to get user's location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            reportMap.setView([lat, lng], 15);
+        }, function(error) {
+            console.log('Geolocation not available:', error);
+        });
+    }
+});
+</script>
+{% endblock %}
